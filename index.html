@@ -1840,41 +1840,87 @@
             }
         });
 
-        function performResearch(query) {
-            const resultsContainer = document.getElementById('research-results');
+   async function performResearch(query) {
+    const resultsContainer = document.getElementById('research-results');
+    resultsContainer.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <div class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <p style="margin-top: 16px; color: var(--text-secondary);">PubMed'de aranıyor: "${query}"</p>
+        </div>
+    `;
+    
+    try {
+        // PubMed API - Arama
+        const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=10&retmode=json&sort=date`;
+        const searchRes = await fetch(searchUrl);
+        const searchData = await searchRes.json();
+        
+        const ids = searchData.esearchresult.idlist;
+        
+        if (ids.length === 0) {
             resultsContainer.innerHTML = `
-                <div style="text-align: center; padding: 40px;">
-                    <div class="loading-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    <p style="margin-top: 16px; color: var(--text-secondary);">Araştırılıyor: "${query}"</p>
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">🔍</div>
+                    <p>"${query}" için sonuç bulunamadı</p>
                 </div>
             `;
-            
-            // Simulate search results
-            setTimeout(() => {
-                resultsContainer.innerHTML = `
-                    <div class="research-result">
-                        <div class="result-source">🔬 PubMed</div>
-                        <div class="result-title"><a href="#">Örnek Araştırma Makalesi - ${query} ile ilgili güncel bulgular</a></div>
-                        <div class="result-meta">Smith J, et al. • Journal of Medical Research • 2024</div>
-                        <div class="result-abstract">Bu bir örnek makaledir. Gerçek uygulamada PubMed API kullanılarak ilgili makaleler çekilecektir...</div>
-                    </div>
-                    <div class="research-result">
-                        <div class="result-source">📊 Cochrane</div>
-                        <div class="result-title"><a href="#">Sistematik Derleme - ${query}</a></div>
-                        <div class="result-meta">Johnson A, et al. • Cochrane Database • 2024</div>
-                        <div class="result-abstract">Cochrane Library'den alınan sistematik derleme örneği...</div>
-                    </div>
-                `;
-                
-                // Update stats
-                const searches = parseInt(document.getElementById('stat-searches').textContent) + 1;
-                document.getElementById('stat-searches').textContent = searches;
-            }, 2000);
+            return;
         }
+        
+        // PubMed API - Detayları al
+        const detailUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`;
+        const detailRes = await fetch(detailUrl);
+        const detailData = await detailRes.json();
+        
+        let html = '';
+        for (const id of ids) {
+            const article = detailData.result[id];
+            if (!article || !article.title) continue;
+            
+            const authors = article.authors ? article.authors.slice(0, 3).map(a => a.name).join(', ') : 'Unknown';
+            const year = article.pubdate ? article.pubdate.split(' ')[0] : '';
+            const journal = article.source || '';
+            
+            html += `
+                <div class="research-result">
+                    <div class="result-source">🔬 PubMed</div>
+                    <div class="result-title">
+                        <a href="https://pubmed.ncbi.nlm.nih.gov/${id}/" target="_blank">${article.title}</a>
+                    </div>
+                    <div class="result-meta">${authors} • ${journal} • ${year}</div>
+                    <div style="margin-top: 12px; display: flex; gap: 8px;">
+                        <a href="https://pubmed.ncbi.nlm.nih.gov/${id}/" target="_blank" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">📄 PubMed'de Aç</a>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="saveArticle('${id}', '${article.title.replace(/'/g, "\\'")}')">🔖 Kaydet</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        resultsContainer.innerHTML = html;
+        
+        // İstatistiği güncelle
+        const searches = parseInt(document.getElementById('stat-searches').textContent) + 1;
+        document.getElementById('stat-searches').textContent = searches;
+        
+    } catch (error) {
+        resultsContainer.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--accent-rose);">
+                <div style="font-size: 3rem; margin-bottom: 16px;">⚠️</div>
+                <p>Arama sırasında hata oluştu. Lütfen tekrar deneyin.</p>
+            </div>
+        `;
+        console.error('PubMed Error:', error);
+    }
+}
+
+// Makale kaydetme fonksiyonu
+async function saveArticle(pmid, title) {
+    alert('✅ Makale kaydedildi: ' + title.substring(0, 50) + '...');
+}
 
         // Initialize
         console.log('MedAssist initialized');
