@@ -1840,81 +1840,118 @@
             }
         });
 
-   async function performResearch(query) {
+async function performResearch(query) {
     const resultsContainer = document.getElementById('research-results');
     resultsContainer.innerHTML = `
         <div style="text-align: center; padding: 40px;">
-            <div class="loading-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <p style="margin-top: 16px; color: var(--text-secondary);">PubMed'de aranıyor: "${query}"</p>
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+            <p style="margin-top: 16px; color: var(--text-secondary);">3 kaynakta aranıyor: "${query}"</p>
         </div>
     `;
     
+    let allResults = [];
+    
+    // 1. PubMed API
     try {
-        // PubMed API - Arama
-        const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=10&retmode=json&sort=date`;
-        const searchRes = await fetch(searchUrl);
-        const searchData = await searchRes.json();
+        const pubmedSearch = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=5&retmode=json&sort=date`);
+        const pubmedData = await pubmedSearch.json();
+        const ids = pubmedData.esearchresult.idlist;
         
-        const ids = searchData.esearchresult.idlist;
-        
-        if (ids.length === 0) {
-            resultsContainer.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-                    <div style="font-size: 3rem; margin-bottom: 16px;">🔍</div>
-                    <p>"${query}" için sonuç bulunamadı</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // PubMed API - Detayları al
-        const detailUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`;
-        const detailRes = await fetch(detailUrl);
-        const detailData = await detailRes.json();
-        
-        let html = '';
-        for (const id of ids) {
-            const article = detailData.result[id];
-            if (!article || !article.title) continue;
+        if (ids.length > 0) {
+            const detailRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`);
+            const detailData = await detailRes.json();
             
-            const authors = article.authors ? article.authors.slice(0, 3).map(a => a.name).join(', ') : 'Unknown';
-            const year = article.pubdate ? article.pubdate.split(' ')[0] : '';
-            const journal = article.source || '';
-            
-            html += `
-                <div class="research-result">
-                    <div class="result-source">🔬 PubMed</div>
-                    <div class="result-title">
-                        <a href="https://pubmed.ncbi.nlm.nih.gov/${id}/" target="_blank">${article.title}</a>
-                    </div>
-                    <div class="result-meta">${authors} • ${journal} • ${year}</div>
-                    <div style="margin-top: 12px; display: flex; gap: 8px;">
-                        <a href="https://pubmed.ncbi.nlm.nih.gov/${id}/" target="_blank" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">📄 PubMed'de Aç</a>
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="saveArticle('${id}', '${article.title.replace(/'/g, "\\'")}')">🔖 Kaydet</button>
-                    </div>
-                </div>
-            `;
+            for (const id of ids) {
+                const article = detailData.result[id];
+                if (article && article.title) {
+                    allResults.push({
+                        source: 'PubMed',
+                        sourceColor: '#dc2626',
+                        sourceIcon: '🔬',
+                        title: article.title,
+                        authors: article.authors ? article.authors.slice(0, 3).map(a => a.name).join(', ') : '',
+                        journal: article.source || '',
+                        year: article.pubdate ? article.pubdate.split(' ')[0] : '',
+                        link: `https://pubmed.ncbi.nlm.nih.gov/${id}/`
+                    });
+                }
+            }
         }
+    } catch (e) { console.log('PubMed error:', e); }
+    
+    // 2. Europe PMC API
+    try {
+        const epmcRes = await fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&resultType=lite&pageSize=5&format=json`);
+        const epmcData = await epmcRes.json();
         
-        resultsContainer.innerHTML = html;
+        if (epmcData.resultList && epmcData.resultList.result) {
+            for (const article of epmcData.resultList.result) {
+                allResults.push({
+                    source: 'Europe PMC',
+                    sourceColor: '#059669',
+                    sourceIcon: '🇪🇺',
+                    title: article.title || '',
+                    authors: article.authorString || '',
+                    journal: article.journalTitle || '',
+                    year: article.pubYear || '',
+                    link: article.pmid ? `https://europepmc.org/article/MED/${article.pmid}` : '#'
+                });
+            }
+        }
+    } catch (e) { console.log('Europe PMC error:', e); }
+    
+    // 3. OpenAlex API
+    try {
+        const oaRes = await fetch(`https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=5&sort=publication_date:desc`);
+        const oaData = await oaRes.json();
         
-        // İstatistiği güncelle
-        const searches = parseInt(document.getElementById('stat-searches').textContent) + 1;
-        document.getElementById('stat-searches').textContent = searches;
-        
-    } catch (error) {
+        if (oaData.results) {
+            for (const article of oaData.results) {
+                allResults.push({
+                    source: 'OpenAlex',
+                    sourceColor: '#7c3aed',
+                    sourceIcon: '📚',
+                    title: article.title || '',
+                    authors: article.authorships ? article.authorships.slice(0, 3).map(a => a.author.display_name).join(', ') : '',
+                    journal: article.primary_location?.source?.display_name || '',
+                    year: article.publication_year || '',
+                    link: article.doi ? `https://doi.org/${article.doi.replace('https://doi.org/', '')}` : article.id
+                });
+            }
+        }
+    } catch (e) { console.log('OpenAlex error:', e); }
+    
+    // Sonuçları göster
+    if (allResults.length === 0) {
         resultsContainer.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: var(--accent-rose);">
-                <div style="font-size: 3rem; margin-bottom: 16px;">⚠️</div>
-                <p>Arama sırasında hata oluştu. Lütfen tekrar deneyin.</p>
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <div style="font-size: 3rem; margin-bottom: 16px;">🔍</div>
+                <p>"${query}" için sonuç bulunamadı</p>
             </div>
         `;
-        console.error('PubMed Error:', error);
+        return;
     }
+    
+    let html = `<p style="color: var(--text-secondary); margin-bottom: 20px;">📊 ${allResults.length} sonuç bulundu (3 kaynaktan)</p>`;
+    
+    for (const r of allResults) {
+        html += `
+            <div class="research-result" style="border-left-color: ${r.sourceColor};">
+                <div class="result-source" style="background: ${r.sourceColor}22; color: ${r.sourceColor};">${r.sourceIcon} ${r.source}</div>
+                <div class="result-title"><a href="${r.link}" target="_blank">${r.title}</a></div>
+                <div class="result-meta">${r.authors} • ${r.journal} • ${r.year}</div>
+                <div style="margin-top: 12px; display: flex; gap: 8px;">
+                    <a href="${r.link}" target="_blank" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">📄 Makaleyi Aç</a>
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="saveArticle('${r.link}', '${r.title.replace(/'/g, "\\'")}')">🔖 Kaydet</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    resultsContainer.innerHTML = html;
+    
+    const searches = parseInt(document.getElementById('stat-searches').textContent) + 1;
+    document.getElementById('stat-searches').textContent = searches;
 }
 
 // Makale kaydetme fonksiyonu
