@@ -1151,12 +1151,12 @@
                 </div>
             </section>
 
-            <!-- Research Page -->
+           <!-- Research Page -->
             <section class="page-section" id="page-research">
                 <div class="header">
                     <div>
                         <h2 class="page-title">Online Araştırma</h2>
-                        <p class="page-subtitle">PubMed, Cochrane ve Google Scholar'da arama yapın</p>
+                        <p class="page-subtitle">Akademik veritabanlarında makale arayın</p>
                     </div>
                 </div>
 
@@ -1166,282 +1166,19 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                         <input type="text" class="search-input" id="research-search" placeholder="Araştırmak istediğiniz konuyu yazın...">
-                    </div><!-- Filtreler -->
-                    <div style="display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="color: var(--text-secondary); font-size: 0.85rem;">📅 Yıl:</span>
-                            <input type="number" id="year-from" placeholder="2020" min="1900" max="2025" style="width: 80px; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-family: inherit;">
-                            <span style="color: var(--text-muted);">-</span>
-                            <input type="number" id="year-to" placeholder="2025" min="1900" max="2025" style="width: 80px; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-family: inherit;">
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="color: var(--text-secondary); font-size: 0.85rem;">📊 Sırala:</span>
-                            <select id="sort-by" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-family: inherit;">
-                                <option value="relevance">İlgililik</option>
-                                <option value="date">En Yeni</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary" style="padding: 8px 16px;" onclick="performResearch(document.getElementById('research-search').value)">🔍 Ara</button>
                     </div>
-                    <div class="search-options">
-                        <label class="search-option active">
-                            <input type="checkbox" checked data-source="pubmed"> 🔬 PubMed
-                        </label>
-                        <label class="search-option active">
-                            <input type="checkbox" checked data-source="cochrane"> 📊 Cochrane
-                        </label>
-                        <label class="search-option active">
-                            <input type="checkbox" checked data-source="scholar"> 🎓 Google Scholar
-                        </label>
+                    
+                    <!-- Kaynak Seçimi -->
+                    <div style="margin-top: 16px;">
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; margin-right: 12px;">📚 Kaynak:</span>
+                        <select id="source-select" style="padding: 10px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-family: inherit; min-width: 200px;">
+                            <option value="all">🌐 Tüm Kaynaklar</option>
+                            <option value="scholar">🎓 Google Scholar</option>
+                            <option value="pubmed">🔬 PubMed</option>
+                            <option value="europepmc">🇪🇺 Europe PMC</option>
+                            <option value="openalex">📚 OpenAlex</option>
+                        </select>
                     </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Araştırma Sonuçları</div>
-                    </div>
-                    <div class="card-body" id="research-results">
-                        <div style="text-align: center; color: var(--text-muted); padding: 60px;">
-                            <div style="font-size: 4rem; margin-bottom: 16px;">🔍</div>
-                            <p>Araştırma yapmak için yukarıdaki arama kutusunu kullanın</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Journals Page -->
-            <section class="page-section" id="page-journals">
-                <div class="header">
-                    <div>
-                        <h2 class="page-title">Güncel Dergiler & Son Makaleler</h2>
-                        <p class="page-subtitle">Takip ettiğiniz dergilerin en son sayıları</p>
-                    </div>
-                    <div class="header-actions">
-                        <button class="btn btn-secondary" onclick="openModal('add-journal')">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                            </svg>
-                            Dergi Ekle
-                        </button>
-                        <button class="btn btn-primary" onclick="refreshJournals()">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                            </svg>
-                            Yenile
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Journal Filter Tabs -->
-                <div class="journal-tabs" style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
-                    <button class="btn btn-secondary journal-tab active" data-filter="all" style="padding: 10px 20px;">
-                        📚 Tüm Dergiler
-                    </button>
-                    <button class="btn btn-secondary journal-tab" data-filter="nejm" style="padding: 10px 20px;">
-                        🏥 NEJM
-                    </button>
-                    <button class="btn btn-secondary journal-tab" data-filter="lancet" style="padding: 10px 20px;">
-                        🔬 Lancet
-                    </button>
-                    <button class="btn btn-secondary journal-tab" data-filter="jama" style="padding: 10px 20px;">
-                        📋 JAMA
-                    </button>
-                    <button class="btn btn-secondary journal-tab" data-filter="bmj" style="padding: 10px 20px;">
-                        🇬🇧 BMJ
-                    </button>
-                    <button class="btn btn-secondary journal-tab" data-filter="custom" style="padding: 10px 20px;">
-                        ⭐ Favorilerim
-                    </button>
-                </div>
-
-                <!-- Stats Row -->
-                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
-                    <div class="stat-card">
-                        <div class="stat-icon teal">📰</div>
-                        <div class="stat-value" id="stat-new-articles">47</div>
-                        <div class="stat-label">Bu Hafta Yeni Makale</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon blue">📚</div>
-                        <div class="stat-value" id="stat-journals">12</div>
-                        <div class="stat-label">Takip Edilen Dergi</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon purple">🔖</div>
-                        <div class="stat-value" id="stat-saved">8</div>
-                        <div class="stat-label">Kaydedilen Makale</div>
-                    </div>
-                </div>
-
-                <!-- Latest Articles -->
-                <div class="card" style="margin-bottom: 24px;">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                            </svg>
-                            Son 7 Günün Öne Çıkan Makaleleri
-                        </div>
-                        <span style="font-size: 0.8rem; color: var(--text-muted);">Son güncelleme: Bugün 09:00</span>
-                    </div>
-                    <div class="card-body" id="latest-articles">
-                        <!-- NEJM Article -->
-                        <div class="research-result" style="border-left-color: #dc2626;">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-                                <div class="result-source" style="background: rgba(220, 38, 38, 0.15); color: #dc2626;">
-                                    🏥 New England Journal of Medicine
-                                </div>
-                                <span style="font-size: 0.75rem; color: var(--success); background: rgba(34, 197, 94, 0.15); padding: 4px 8px; border-radius: 12px;">🆕 2 gün önce</span>
-                            </div>
-                            <div class="result-title"><a href="#">Efficacy and Safety of a New mRNA Vaccine for Respiratory Syncytial Virus in Older Adults</a></div>
-                            <div class="result-meta">Walsh EE, et al. • N Engl J Med 2024; 391:2345-2356 • December 2024</div>
-                            <div class="result-abstract">A phase 3 randomized trial evaluating the efficacy of an mRNA-based vaccine against RSV in adults 60 years or older showed 83.7% efficacy against RSV-associated lower respiratory tract disease...</div>
-                            <div style="margin-top: 12px; display: flex; gap: 8px;">
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">📄 PDF</button>
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">🔖 Kaydet</button>
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">📤 Paylaş</button>
-                            </div>
-                        </div>
-
-                        <!-- Lancet Article -->
-                        <div class="research-result" style="border-left-color: #0284c7;">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-                                <div class="result-source" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
-                                    🔬 The Lancet
-                                </div>
-                                <span style="font-size: 0.75rem; color: var(--success); background: rgba(34, 197, 94, 0.15); padding: 4px 8px; border-radius: 12px;">🆕 3 gün önce</span>
-                            </div>
-                            <div class="result-title"><a href="#">Global burden of cardiovascular disease attributable to metabolic risk factors, 1990-2023</a></div>
-                            <div class="result-meta">GBD Cardiovascular Risk Collaborators • Lancet 2024; 404:1892-1910 • December 2024</div>
-                            <div class="result-abstract">This systematic analysis of the Global Burden of Disease Study provides updated estimates of cardiovascular disease burden attributable to metabolic risk factors across 204 countries...</div>
-                            <div style="margin-top: 12px; display: flex; gap: 8px;">
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">📄 PDF</button>
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">🔖 Kaydet</button>
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">📤 Paylaş</button>
-                            </div>
-                        </div>
-
-                        <!-- JAMA Article -->
-                        <div class="research-result" style="border-left-color: #7c3aed;">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-                                <div class="result-source" style="background: rgba(124, 58, 237, 0.15); color: #7c3aed;">
-                                    📋 JAMA
-                                </div>
-                                <span style="font-size: 0.75rem; color: var(--warning); background: rgba(245, 158, 11, 0.15); padding: 4px 8px; border-radius: 12px;">5 gün önce</span>
-                            </div>
-                            <div class="result-title"><a href="#">Association of Artificial Intelligence-Assisted Colonoscopy With Adenoma Detection Rate: A Systematic Review and Meta-Analysis</a></div>
-                            <div class="result-meta">Chen H, et al. • JAMA Netw Open 2024;7(12):e2449123 • December 2024</div>
-                            <div class="result-abstract">This meta-analysis of 25 randomized clinical trials found that AI-assisted colonoscopy significantly improved adenoma detection rate compared with standard colonoscopy (39.2% vs 30.8%)...</div>
-                            <div style="margin-top: 12px; display: flex; gap: 8px;">
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">📄 PDF</button>
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">🔖 Kaydet</button>
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">📤 Paylaş</button>
-                            </div>
-                        </div>
-
-                        <!-- BMJ Article -->
-                        <div class="research-result" style="border-left-color: #059669;">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-                                <div class="result-source" style="background: rgba(5, 150, 105, 0.15); color: #059669;">
-                                    🇬🇧 BMJ
-                                </div>
-                                <span style="font-size: 0.75rem; color: var(--text-muted); background: var(--bg-secondary); padding: 4px 8px; border-radius: 12px;">1 hafta önce</span>
-                            </div>
-                            <div class="result-title"><a href="#">Effectiveness of lifestyle interventions for preventing type 2 diabetes in people with prediabetes: systematic review and network meta-analysis</a></div>
-                            <div class="result-meta">Rodriguez-Gutierrez R, et al. • BMJ 2024;387:e080759 • November 2024</div>
-                            <div class="result-abstract">This network meta-analysis compared various lifestyle intervention strategies for diabetes prevention and found that combined diet and exercise programs reduced diabetes risk by 58%...</div>
-                            <div style="margin-top: 12px; display: flex; gap: 8px;">
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">📄 PDF</button>
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">🔖 Kaydet</button>
-                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">📤 Paylaş</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Followed Journals -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                            </svg>
-                            Takip Ettiğiniz Dergiler
-                        </div>
-                        <button class="btn btn-secondary" style="padding: 8px 12px; font-size: 0.8rem;" onclick="openModal('add-journal')">+ Dergi Ekle</button>
-                    </div>
-                    <div class="card-body">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;" id="journals-grid">
-                            <!-- NEJM -->
-                            <div class="doc-item" style="flex-direction: column; align-items: flex-start; padding: 20px;">
-                                <div style="display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 12px;">
-                                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #dc2626, #b91c1c); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🏥</div>
-                                    <div style="flex: 1;">
-                                        <div class="doc-name">NEJM</div>
-                                        <div class="doc-meta">New England Journal of Medicine</div>
-                                    </div>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.85rem;">
-                                    <span style="color: var(--accent-teal);">12 yeni makale</span>
-                                    <span style="color: var(--text-muted);">IF: 176.1</span>
-                                </div>
-                            </div>
-
-                            <!-- Lancet -->
-                            <div class="doc-item" style="flex-direction: column; align-items: flex-start; padding: 20px;">
-                                <div style="display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 12px;">
-                                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #0284c7, #0369a1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🔬</div>
-                                    <div style="flex: 1;">
-                                        <div class="doc-name">The Lancet</div>
-                                        <div class="doc-meta">Lancet Publishing Group</div>
-                                    </div>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.85rem;">
-                                    <span style="color: var(--accent-teal);">8 yeni makale</span>
-                                    <span style="color: var(--text-muted);">IF: 168.9</span>
-                                </div>
-                            </div>
-
-                            <!-- JAMA -->
-                            <div class="doc-item" style="flex-direction: column; align-items: flex-start; padding: 20px;">
-                                <div style="display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 12px;">
-                                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #7c3aed, #6d28d9); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">📋</div>
-                                    <div style="flex: 1;">
-                                        <div class="doc-name">JAMA</div>
-                                        <div class="doc-meta">Journal of the AMA</div>
-                                    </div>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.85rem;">
-                                    <span style="color: var(--accent-teal);">15 yeni makale</span>
-                                    <span style="color: var(--text-muted);">IF: 120.7</span>
-                                </div>
-                            </div>
-
-                            <!-- BMJ -->
-                            <div class="doc-item" style="flex-direction: column; align-items: flex-start; padding: 20px;">
-                                <div style="display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 12px;">
-                                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #059669, #047857); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🇬🇧</div>
-                                    <div style="flex: 1;">
-                                        <div class="doc-name">BMJ</div>
-                                        <div class="doc-meta">British Medical Journal</div>
-                                    </div>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.85rem;">
-                                    <span style="color: var(--accent-teal);">10 yeni makale</span>
-                                    <span style="color: var(--text-muted);">IF: 105.7</span>
-                                </div>
-                            </div>
-
-                            <!-- Add New Journal Card -->
-                            <div class="doc-item" style="flex-direction: column; align-items: center; justify-content: center; padding: 20px; border: 2px dashed var(--border-color); background: transparent; cursor: pointer;" onclick="openModal('add-journal')">
-                                <div style="font-size: 2rem; margin-bottom: 8px; opacity: 0.5;">➕</div>
-                                <div style="color: var(--text-muted);">Yeni Dergi Ekle</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
             <!-- Alerts Page -->
             <section class="page-section" id="page-alerts">
                 <div class="header">
