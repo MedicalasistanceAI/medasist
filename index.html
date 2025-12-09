@@ -1886,7 +1886,7 @@ async function performResearch(query) {
     
     // 2. PubMed API
     try {
-        const pubmedSearch = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}${yearFrom ? `&mindate=${yearFrom}` : ''}${yearTo ? `&maxdate=${yearTo}` : ''}&retmax=5&retmode=json&sort=${sortBy === 'date' ? 'date' : 'relevance'}`);
+        const pubmedSearch = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}${yearFrom ? `&mindate=${yearFrom}` : ''}${yearTo ? `&maxdate=${yearTo}` : ''}&retmax=15&retmode=json&sort=${sortBy === 'date' ? 'date' : 'relevance'}`);
         const pubmedData = await pubmedSearch.json();
         const ids = pubmedData.esearchresult.idlist;
         
@@ -1914,7 +1914,7 @@ async function performResearch(query) {
     
     // 3. Europe PMC API
     try {
-        const epmcRes = await fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}${yearFrom ? ` AND PUB_YEAR:[${yearFrom} TO ${yearTo || '2025'}]` : ''}&resultType=lite&pageSize=5&format=json&sort=${sortBy === 'date' ? 'DATE_DESC' : 'RELEVANCE'}`);
+        const epmcRes = await fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}${yearFrom ? ` AND PUB_YEAR:[${yearFrom} TO ${yearTo || '2025'}]` : ''}&resultType=lite&pageSize=15&format=json&sort=${sortBy === 'date' ? 'DATE_DESC' : 'RELEVANCE'}`);
         const epmcData = await epmcRes.json();
         
         if (epmcData.resultList && epmcData.resultList.result) {
@@ -1935,7 +1935,7 @@ async function performResearch(query) {
     
     // 4. OpenAlex API
     try {
-        const oaRes = await fetch(`https://api.openalex.org/works?search=${encodeURIComponent(query)}${yearFrom ? `&filter=publication_year:${yearFrom}-${yearTo || '2025'}` : ''}&per_page=5&sort=${sortBy === 'date' ? 'publication_date:desc' : 'relevance_score:desc'}`);
+        const oaRes = await fetch(`https://api.openalex.org/works?search=${encodeURIComponent(query)}${yearFrom ? `&filter=publication_year:${yearFrom}-${yearTo || '2025'}` : ''}&per_page=15&sort=${sortBy === 'date' ? 'publication_date:desc' : 'relevance_score:desc'}`);
         const oaData = await oaRes.json();
         
         if (oaData.results) {
