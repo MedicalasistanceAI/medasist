@@ -1842,18 +1842,35 @@
 
 async function performResearch(query) {
     const resultsContainer = document.getElementById('research-results');
+    const yearFrom = document.getElementById('year-from')?.value || '';
+    const yearTo = document.getElementById('year-to')?.value || '';
+    const sortBy = document.getElementById('sort-by')?.value || 'relevance';
+    
     resultsContainer.innerHTML = `
         <div style="text-align: center; padding: 40px;">
             <div class="loading-dots"><span></span><span></span><span></span></div>
-            <p style="margin-top: 16px; color: var(--text-secondary);">3 kaynakta aranıyor: "${query}"</p>
+            <p style="margin-top: 16px; color: var(--text-secondary);">4 kaynakta aranıyor: "${query}"</p>
         </div>
     `;
     
     let allResults = [];
     
-    // 1. PubMed API
+    // 1. Google Scholar (Supabase Edge Function)
     try {
-        const pubmedSearch = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=5&retmode=json&sort=date`);
+        const scholarRes = await fetch('https://voynqdxzvfshozvqflzp.supabase.co/functions/v1/scholar-search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, yearFrom, yearTo, sortBy })
+        });
+        const scholarData = await scholarRes.json();
+        if (scholarData.success && scholarData.articles) {
+            allResults = allResults.concat(scholarData.articles);
+        }
+    } catch (e) { console.log('Google Scholar error:', e); }
+    
+    // 2. PubMed API
+    try {
+        const pubmedSearch = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}${yearFrom ? `&mindate=${yearFrom}` : ''}${yearTo ? `&maxdate=${yearTo}` : ''}&retmax=5&retmode=json&sort=${sortBy === 'date' ? 'date' : 'relevance'}`);
         const pubmedData = await pubmedSearch.json();
         const ids = pubmedData.esearchresult.idlist;
         
@@ -1879,9 +1896,9 @@ async function performResearch(query) {
         }
     } catch (e) { console.log('PubMed error:', e); }
     
-    // 2. Europe PMC API
+    // 3. Europe PMC API
     try {
-        const epmcRes = await fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&resultType=lite&pageSize=5&format=json`);
+        const epmcRes = await fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}${yearFrom ? ` AND PUB_YEAR:[${yearFrom} TO ${yearTo || '2025'}]` : ''}&resultType=lite&pageSize=5&format=json&sort=${sortBy === 'date' ? 'DATE_DESC' : 'RELEVANCE'}`);
         const epmcData = await epmcRes.json();
         
         if (epmcData.resultList && epmcData.resultList.result) {
@@ -1900,9 +1917,9 @@ async function performResearch(query) {
         }
     } catch (e) { console.log('Europe PMC error:', e); }
     
-    // 3. OpenAlex API
+    // 4. OpenAlex API
     try {
-        const oaRes = await fetch(`https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=5&sort=publication_date:desc`);
+        const oaRes = await fetch(`https://api.openalex.org/works?search=${encodeURIComponent(query)}${yearFrom ? `&filter=publication_year:${yearFrom}-${yearTo || '2025'}` : ''}&per_page=5&sort=${sortBy === 'date' ? 'publication_date:desc' : 'relevance_score:desc'}`);
         const oaData = await oaRes.json();
         
         if (oaData.results) {
@@ -1921,6 +1938,11 @@ async function performResearch(query) {
         }
     } catch (e) { console.log('OpenAlex error:', e); }
     
+    // Yıla göre sırala
+    if (sortBy === 'date') {
+        allResults.sort((a, b) => (parseInt(b.year) || 0) - (parseInt(a.year) || 0));
+    }
+    
     // Sonuçları göster
     if (allResults.length === 0) {
         resultsContainer.innerHTML = `
@@ -1932,14 +1954,17 @@ async function performResearch(query) {
         return;
     }
     
-    let html = `<p style="color: var(--text-secondary); margin-bottom: 20px;">📊 ${allResults.length} sonuç bulundu (3 kaynaktan)</p>`;
+    let html = `<p style="color: var(--text-secondary); margin-bottom: 20px;">📊 ${allResults.length} sonuç bulundu (4 kaynaktan)</p>`;
     
     for (const r of allResults) {
         html += `
             <div class="research-result" style="border-left-color: ${r.sourceColor};">
-                <div class="result-source" style="background: ${r.sourceColor}22; color: ${r.sourceColor};">${r.sourceIcon} ${r.source}</div>
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div class="result-source" style="background: ${r.sourceColor}22; color: ${r.sourceColor};">${r.sourceIcon} ${r.source}</div>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">📅 ${r.year}</span>
+                </div>
                 <div class="result-title"><a href="${r.link}" target="_blank">${r.title}</a></div>
-                <div class="result-meta">${r.authors} • ${r.journal} • ${r.year}</div>
+                <div class="result-meta">${r.authors} • ${r.journal}</div>
                 <div style="margin-top: 12px; display: flex; gap: 8px;">
                     <a href="${r.link}" target="_blank" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">📄 Makaleyi Aç</a>
                     <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="saveArticle('${r.link}', '${r.title.replace(/'/g, "\\'")}')">🔖 Kaydet</button>
@@ -1953,7 +1978,6 @@ async function performResearch(query) {
     const searches = parseInt(document.getElementById('stat-searches').textContent) + 1;
     document.getElementById('stat-searches').textContent = searches;
 }
-
 // Makale kaydetme fonksiyonu
 async function saveArticle(pmid, title) {
     alert('✅ Makale kaydedildi: ' + title.substring(0, 50) + '...');
