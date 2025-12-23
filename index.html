@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAssist Pro - Medikal Araştırma Platformu</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Google API -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    
+    <!-- PDF.js for PDF text extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // API Keys
+        const GOOGLE_CLIENT_ID = '166686144734-tiaka0qn5pg9lj3qvuu7os92r8r0odbk.apps.googleusercontent.com';
+        const GOOGLE_API_KEY = 'AIzaSyDoBwLPRxhGotHcJ3Ypi2aPxIt4RRIgEoY';
+        const CLAUDE_API_KEY = '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';
+        
+        const SUPABASE_URL = 'https://voynqdxzvfshozvqflzp.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZveW5xZHh6dmZzaG96dnFmbHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM1MDcyMjAsImV4cCI6MjA0OTA4MzIyMH0.example';
+        
+        // PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #f1f5f9;
+            --bg-hover: #e2e8f0;
+            --accent-primary: #0891b2;
+            --accent-secondary: #0d9488;
+            --accent-tertiary: #ec4899;
+            --accent-gold: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --text-dark: #0f172a;
+            --text-body: #334155;
+            --text-muted: #64748b;
+            --text-light: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-light: #f1f5f9;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-body);
+            min-height: 100vh;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(8, 145, 178, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(13, 148, 136, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0; top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .logo-section {
+            padding: 28px 24px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 14px rgba(8, 145, 178, 0.3);
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .logo-text span {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .nav-menu {
+            padding: 20px 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-section { margin-bottom: 28px; }
+
+        .nav-section-title {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-light);
+            padding: 0 14px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-input);
+            color: var(--text-dark);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(8, 145, 178, 0.1) 0%, rgba(13, 148, 136, 0.05) 100%);
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .nav-icon { font-size: 1rem; }
+        .nav-text { font-size: 0.92rem; }
+
+        .nav-badge {
+            margin-left: auto;
+            background: linear-gradient(135deg, var(--accent-tertiary), var(--accent-purple));
+            color: white;
+            font-size: 0.65rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .user-section {
+            padding: 16px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: var(--bg-input);
+            border-radius: 14px;
+        }
+
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+
+        .user-info h4 {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+        }
+
+        .user-role {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 32px 40px;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+        }
+
+        .page-title-section h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+        }
+
+        .page-title-section p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 22px;
+            border-radius: 12px;
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 4px 14px rgba(8, 145, 178, 0.25);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(8, 145, 178, 0.35);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-body);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-input);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .btn-google {
+            background: white;
+            color: #333;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-google:hover {
+            background: var(--bg-input);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 18px;
+            padding: 24px;
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+        }
+
+        .stat-icon.primary { background: linear-gradient(135deg, rgba(8, 145, 178, 0.15), rgba(8, 145, 178, 0.05)); }
+        .stat-icon.secondary { background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(13, 148, 136, 0.05)); }
+        .stat-icon.tertiary { background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(236, 72, 153, 0.05)); }
+        .stat-icon.gold { background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05)); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            padding: 22px 26px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-input);
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title-icon {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .card-body { padding: 26px; }
+
+        /* Search */
+        .search-container {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 28px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-md);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 24px 18px 56px;
+            background: var(--bg-input);
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            color: var(--text-dark);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1);
+            background: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 1.2rem;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .filter-select, .filter-input {
+            padding: 10px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-body);
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .filter-input { width: 85px; }
+
+        /* Document List */
+        .doc-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .doc-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px;
+            background: var(--bg-input);
+            border-radius: 14px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .doc-item:hover {
+            background: var(--bg-hover);
+            transform: translateX(4px);
+        }
+
+        .doc-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .doc-icon.pdf { background: rgba(239, 68, 68, 0.1); }
+        .doc-icon.ppt { background: rgba(249, 115, 22, 0.1); }
+
+        .doc-info { flex: 1; }
+
+        .doc-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .doc-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .doc-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .doc-btn {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .doc-btn:hover {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        /* Chat */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 14px;
+            max-width: 85%;
+        }
+
+        .chat-message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .chat-message.assistant .chat-avatar {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+        }
+
+        .chat-message.user .chat-avatar {
+            background: var(--bg-hover);
+        }
+
+        .chat-bubble {
+            padding: 16px 20px;
+            border-radius: 18px;
+            line-height: 1.6;
+        }
+
+        .chat-message.assistant .chat-bubble {
+            background: var(--bg-input);
+            border-bottom-left-radius: 6px;
+        }
+
+        .chat-message.user .chat-bubble {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .chat-source {
+            margin-top: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .chat-source-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .chat-source-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: var(--bg-input);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 16px 20px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: none;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        /* Results */
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .result-card {
+            background: var(--bg-input);
+            border-radius: 16px;
+            padding: 22px;
+            border: 1px solid var(--border-light);
+            transition: all 0.25s ease;
+        }
+
+        .result-card:hover {
+            background: white;
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-md);
+            transform: translateX(6px);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .result-source {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .result-source.pubmed { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+        .result-source.europepmc { background: rgba(8, 145, 178, 0.1); color: var(--accent-primary); }
+        .result-source.openalex { background: rgba(139, 92, 246, 0.1); color: var(--accent-purple); }
+        .result-source.semantic { background: rgba(13, 148, 136, 0.1); color: var(--accent-secondary); }
+
+        .result-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .result-title a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .result-title a:hover { color: var(--accent-primary); }
+
+        .result-meta {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 14px;
+        }
+
+        .result-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: var(--text-body);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .result-btn:hover {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        /* Journals */
+        .journals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 18px;
+        }
+
+        .journal-card {
+            background: var(--bg-input);
+            border-radius: 16px;
+            padding: 22px;
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .journal-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .journal-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .journal-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: white;
+        }
+
+        .journal-icon.nejm { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+        .journal-icon.lancet { background: linear-gradient(135deg, #0284c7, #0369a1); }
+        .journal-icon.jama { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+        .journal-icon.bmj { background: linear-gradient(135deg, #059669, #047857); }
+
+        .journal-info h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .journal-info p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .journal-stats {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .journal-stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .journal-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Settings */
+        .settings-section {
+            background: var(--bg-input);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 18px;
+        }
+
+        .settings-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 18px;
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .settings-row:last-child { border-bottom: none; }
+
+        .toggle {
+            width: 48px;
+            height: 26px;
+            background: var(--border-color);
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .toggle.active { background: var(--accent-primary); }
+
+        .toggle::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: all 0.2s ease;
+        }
+
+        .toggle.active::after { left: 25px; }
+
+        /* Page Sections */
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+
+        .empty-title {
+            font-size: 1.25rem;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .empty-text {
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-input);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .modal-body { padding: 28px; }
+
+        .form-group { margin-bottom: 22px; }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 44px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-primary);
+            background: rgba(8, 145, 178, 0.03);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 14px;
+        }
+
+        /* Loading */
+        .loading-dots {
+            display: inline-flex;
+            gap: 5px;
+        }
+
+        .loading-dots span {
+            width: 10px;
+            height: 10px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .content-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 24px; }
+        }
+
+        /* Drive Status */
+        .drive-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .drive-status.connected {
+            background: rgba(34, 197, 94, 0.1);
+            color: #16a34a;
+        }
+
+        .drive-status.disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <div class="logo-icon">🩺</div>
+                    <div class="logo-text">
+                        <h1>MedAssist</h1>
+                        <span>Research Platform</span>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">Ana Menü</div>
+                    <div class="nav-item active" data-page="dashboard">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-text">Ana Sayfa</span>
+                    </div>
+                    <div class="nav-item" data-page="research">
+                        <span class="nav-icon">🔬</span>
+                        <span class="nav-text">Araştırma</span>
+                    </div>
+                    <div class="nav-item" data-page="documents">
+                        <span class="nav-icon">📁</span>
+                        <span class="nav-text">Dokümanlar</span>
+                        <span class="nav-badge" id="doc-count">0</span>
+                    </div>
+                    <div class="nav-item" data-page="journals">
+                        <span class="nav-icon">📚</span>
+                        <span class="nav-text">Dergiler</span>
+                    </div>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">AI Araçları</div>
+                    <div class="nav-item" data-page="ask">
+                        <span class="nav-icon">💬</span>
+                        <span class="nav-text">Dokümanlara Sor</span>
+                        <span class="nav-badge">AI</span>
+                    </div>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Yönetim</div>
+                    <div class="nav-item" data-page="settings">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">Ayarlar</span>
+                    </div>
+                </div>
+            </nav>
+            
+            <div class="user-section">
+                <div class="user-card">
+                    <div class="user-avatar">DR</div>
+                    <div class="user-info">
+                        <h4>Dr. Kullanıcı</h4>
+                        <div class="user-role">
+                            <span class="status-dot"></span>
+                            Admin
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard -->
+            <section class="page-section active" id="page-dashboard">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <h1>Hoş Geldiniz 👋</h1>
+                        <p>Medikal araştırma platformunuz hazır</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="navigateTo('documents')">
+                            📁 Dokümanlar
+                        </button>
+                        <button class="btn btn-primary" onclick="navigateTo('ask')">
+                            💬 AI'ya Sor
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon primary">📄</div>
+                        <div class="stat-value" id="stat-docs">0</div>
+                        <div class="stat-label">Yüklü Doküman</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon secondary">💬</div>
+                        <div class="stat-value" id="stat-questions">0</div>
+                        <div class="stat-label">Sorulan Soru</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon tertiary">🔍</div>
+                        <div class="stat-value" id="stat-searches">0</div>
+                        <div class="stat-label">Araştırma</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon gold">📚</div>
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">Takip Edilen Dergi</div>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <div class="card-title-icon">⚡</div>
+                                Hızlı Başlangıç
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                                <div class="doc-item" onclick="navigateTo('documents')">
+                                    <div class="doc-icon pdf">📤</div>
+                                    <div class="doc-info">
+                                        <div class="doc-name">Doküman Yükle</div>
+                                        <div class="doc-meta">PDF veya PPT yükleyin</div>
+                                    </div>
+                                </div>
+                                <div class="doc-item" onclick="navigateTo('ask')">
+                                    <div class="doc-icon" style="background: rgba(8, 145, 178, 0.1);">💬</div>
+                                    <div class="doc-info">
+                                        <div class="doc-name">AI'ya Soru Sor</div>
+                                        <div class="doc-meta">Dokümanlarınızı sorgulayın</div>
+                                    </div>
+                                </div>
+                                <div class="doc-item" onclick="navigateTo('research')">
+                                    <div class="doc-icon" style="background: rgba(139, 92, 246, 0.1);">🔬</div>
+                                    <div class="doc-info">
+                                        <div class="doc-name">Online Araştırma</div>
+                                        <div class="doc-meta">PubMed, Scholar ve daha fazlası</div>
+                                    </div>
+                                </div>
+                                <div class="doc-item" onclick="navigateTo('journals')">
+                                    <div class="doc-icon" style="background: rgba(245, 158, 11, 0.1);">📚</div>
+                                    <div class="doc-info">
+                                        <div class="doc-name">Dergileri Takip Et</div>
+                                        <div class="doc-meta">NEJM, Lancet, JAMA...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <div class="card-title-icon">📄</div>
+                                Son Dokümanlar
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="recent-docs-list">
+                                <div class="empty-state" style="padding: 30px;">
+                                    <div style="font-size: 2rem; margin-bottom: 10px;">📁</div>
+                                    <div style="color: var(--text-muted);">Henüz doküman yok</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Documents -->
+            <section class="page-section" id="page-documents">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <h1>📁 Dokümanlar</h1>
+                        <p>PDF ve PowerPoint dosyalarınızı yönetin</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-google" onclick="connectGoogleDrive()">
+                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                            Google Drive'dan Yükle
+                        </button>
+                        <button class="btn btn-primary" onclick="document.getElementById('file-upload').click()">
+                            📤 Dosya Yükle
+                        </button>
+                        <input type="file" id="file-upload" hidden accept=".pdf,.ppt,.pptx" multiple onchange="handleFileUpload(event)">
+                    </div>
+                </div>
+
+                <div id="drive-status-container"></div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-title-icon">📄</div>
+                            Yüklü Dokümanlar
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">
+                            <span id="total-docs">0</span> doküman
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="documents-list">
+                            <div class="empty-state">
+                                <div class="empty-icon">📁</div>
+                                <div class="empty-title">Doküman kütüphanesi boş</div>
+                                <div class="empty-text">PDF veya PowerPoint dosyalarınızı yükleyin</div>
+                                <button class="btn btn-primary" onclick="document.getElementById('file-upload').click()">
+                                    📤 İlk Dokümanı Yükle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ask AI -->
+            <section class="page-section" id="page-ask">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <h1>💬 Dokümanlara Sor</h1>
+                        <p>AI ile dokümanlarınızda arama yapın</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="chat-message assistant">
+                                <div class="chat-avatar">🤖</div>
+                                <div class="chat-bubble">
+                                    Merhaba! Yüklediğiniz dokümanlar hakkında sorular sorabilirsiniz. 
+                                    Size kitaplarınızdan alıntılar yaparak cevap vereceğim ve kaynak göstereceğim.
+                                    <br><br>
+                                    <strong>Örnek sorular:</strong><br>
+                                    • "Hipertansiyon tedavisi hakkında ne anlatılıyor?"<br>
+                                    • "Diabetes mellitus bölümünü özetle"<br>
+                                    • "İlaç etkileşimleri tablosu var mı?"
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input" class="chat-input" placeholder="Dokümanlarınız hakkında soru sorun...">
+                            <button class="btn btn-primary" onclick="askQuestion()" id="ask-btn">
+                                Sor →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Research -->
+            <section class="page-section" id="page-research">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <h1>🔬 Online Araştırma</h1>
+                        <p>4 farklı akademik veritabanında arama yapın</p>
+                    </div>
+                </div>
+
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" class="search-input" id="research-search" placeholder="Araştırmak istediğiniz konuyu yazın...">
+                        <span class="search-icon">🔍</span>
+                    </div>
+
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <span class="filter-label">📚 Kaynak:</span>
+                            <select id="source-select" class="filter-select">
+                                <option value="all">🌐 Tüm Kaynaklar</option>
+                                <option value="scholar">🎓 Semantic Scholar</option>
+                                <option value="pubmed">🔬 PubMed</option>
+                                <option value="europepmc">🇪🇺 Europe PMC</option>
+                                <option value="openalex">📚 OpenAlex</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <span class="filter-label">📅 Yıl:</span>
+                            <input type="number" id="year-from" class="filter-input" placeholder="2020">
+                            <span style="color: var(--text-light);">—</span>
+                            <input type="number" id="year-to" class="filter-input" placeholder="2025">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <span class="filter-label">🔢 Sonuç:</span>
+                            <select id="result-count" class="filter-select">
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="performResearch(document.getElementById('research-search').value)">
+                            🔍 Araştır
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-title-icon">📋</div>
+                            Araştırma Sonuçları
+                        </div>
+                        <div id="results-count" style="color: var(--text-muted);"></div>
+                    </div>
+                    <div class="card-body" id="research-results">
+                        <div class="empty-state">
+                            <div class="empty-icon">🔍</div>
+                            <div class="empty-title">Araştırma yapın</div>
+                            <div class="empty-text">Yukarıdaki arama kutusunu kullanın</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Journals -->
+            <section class="page-section" id="page-journals">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <h1>📚 Güncel Dergiler</h1>
+                        <p>Takip ettiğiniz dergilerin son makaleleri</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="stat-card">
+                        <div class="stat-icon primary">📰</div>
+                        <div class="stat-value">47</div>
+                        <div class="stat-label">Bu Hafta Yeni Makale</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon secondary">📚</div>
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">Takip Edilen Dergi</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon gold">🔖</div>
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">Kaydedilen Makale</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="journals-grid">
+                            <div class="journal-card">
+                                <div class="journal-header">
+                                    <div class="journal-icon nejm">🏥</div>
+                                    <div class="journal-info">
+                                        <h3>NEJM</h3>
+                                        <p>New England Journal of Medicine</p>
+                                    </div>
+                                </div>
+                                <div class="journal-stats">
+                                    <div><div class="journal-stat-value">12</div><div class="journal-stat-label">Yeni</div></div>
+                                    <div><div class="journal-stat-value">176.1</div><div class="journal-stat-label">IF</div></div>
+                                </div>
+                            </div>
+                            <div class="journal-card">
+                                <div class="journal-header">
+                                    <div class="journal-icon lancet">🔬</div>
+                                    <div class="journal-info">
+                                        <h3>The Lancet</h3>
+                                        <p>Lancet Publishing Group</p>
+                                    </div>
+                                </div>
+                                <div class="journal-stats">
+                                    <div><div class="journal-stat-value">8</div><div class="journal-stat-label">Yeni</div></div>
+                                    <div><div class="journal-stat-value">168.9</div><div class="journal-stat-label">IF</div></div>
+                                </div>
+                            </div>
+                            <div class="journal-card">
+                                <div class="journal-header">
+                                    <div class="journal-icon jama">📋</div>
+                                    <div class="journal-info">
+                                        <h3>JAMA</h3>
+                                        <p>Journal of the AMA</p>
+                                    </div>
+                                </div>
+                                <div class="journal-stats">
+                                    <div><div class="journal-stat-value">15</div><div class="journal-stat-label">Yeni</div></div>
+                                    <div><div class="journal-stat-value">120.7</div><div class="journal-stat-label">IF</div></div>
+                                </div>
+                            </div>
+                            <div class="journal-card">
+                                <div class="journal-header">
+                                    <div class="journal-icon bmj">🇬🇧</div>
+                                    <div class="journal-info">
+                                        <h3>BMJ</h3>
+                                        <p>British Medical Journal</p>
+                                    </div>
+                                </div>
+                                <div class="journal-stats">
+                                    <div><div class="journal-stat-value">10</div><div class="journal-stat-label">Yeni</div></div>
+                                    <div><div class="journal-stat-value">105.7</div><div class="journal-stat-label">IF</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings -->
+            <section class="page-section" id="page-settings">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <h1>⚙️ Ayarlar</h1>
+                        <p>Uygulama ayarları</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="settings-section">
+                            <div class="settings-title">🔗 Google Drive Bağlantısı</div>
+                            <div id="google-drive-settings">
+                                <button class="btn btn-google" onclick="connectGoogleDrive()">
+                                    Google Drive'a Bağlan
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <div class="settings-title">🤖 AI Ayarları</div>
+                            <div class="settings-row">
+                                <div>
+                                    <div style="font-weight: 600;">Claude AI</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-muted);">Doküman soru-cevap için</div>
+                                </div>
+                                <div class="toggle active"></div>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <div class="settings-title">🌐 Araştırma Kaynakları</div>
+                            <div class="settings-row">
+                                <div><div style="font-weight: 600;">Semantic Scholar</div></div>
+                                <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="settings-row">
+                                <div><div style="font-weight: 600;">PubMed</div></div>
+                                <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="settings-row">
+                                <div><div style="font-weight: 600;">Europe PMC</div></div>
+                                <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                            <div class="settings-row">
+                                <div><div style="font-weight: 600;">OpenAlex</div></div>
+                                <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // ============ GLOBAL STATE ============
+        let documents = [];
+        let googleAccessToken = null;
+        let questionCount = 0;
+        let searchCount = 0;
+
+        // ============ NAVIGATION ============
+        function navigateTo(page) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+            document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+            document.getElementById(`page-${page}`)?.classList.add('active');
+        }
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => navigateTo(item.dataset.page));
+        });
+
+        // ============ GOOGLE DRIVE ============
+        let tokenClient;
+
+        function initGoogleDrive() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: 'https://www.googleapis.com/auth/drive.readonly',
+                callback: (response) => {
+                    if (response.access_token) {
+                        googleAccessToken = response.access_token;
+                        showDriveConnected();
+                        openGooglePicker();
+                    }
+                },
+            });
+        }
+
+        function connectGoogleDrive() {
+            if (!tokenClient) {
+                initGoogleDrive();
+            }
+            tokenClient.requestAccessToken();
+        }
+
+        function showDriveConnected() {
+            document.getElementById('drive-status-container').innerHTML = `
+                <div class="drive-status connected">
+                    <span>✅</span>
+                    <span>Google Drive bağlı</span>
+                    <button class="btn btn-secondary" style="margin-left: auto; padding: 6px 12px; font-size: 0.8rem;" onclick="openGooglePicker()">
+                        📂 Dosya Seç
+                    </button>
+                </div>
+            `;
+        }
+
+        function openGooglePicker() {
+            gapi.load('picker', () => {
+                const picker = new google.picker.PickerBuilder()
+                    .addView(new google.picker.DocsView()
+                        .setIncludeFolders(true)
+                        .setMimeTypes('application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation'))
+                    .setOAuthToken(googleAccessToken)
+                    .setDeveloperKey(GOOGLE_API_KEY)
+                    .setCallback(pickerCallback)
+                    .setTitle('Doküman Seçin')
+                    .build();
+                picker.setVisible(true);
+            });
+        }
+
+        async function pickerCallback(data) {
+            if (data.action === google.picker.Action.PICKED) {
+                for (const doc of data.docs) {
+                    await downloadAndProcessFile(doc);
+                }
+            }
+        }
+
+        async function downloadAndProcessFile(doc) {
+            try {
+                showLoadingState(`"${doc.name}" indiriliyor...`);
+                
+                const response = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`, {
+                    headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+                });
+                
+                const blob = await response.blob();
+                const file = new File([blob], doc.name, { type: doc.mimeType });
+                
+                await processDocument(file);
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Dosya indirilemedi: ' + error.message);
+            }
+        }
+
+        // ============ FILE UPLOAD ============
+        async function handleFileUpload(event) {
+            const files = event.target.files;
+            for (const file of files) {
+                await processDocument(file);
+            }
+        }
+
+        async function processDocument(file) {
+            showLoadingState(`"${file.name}" işleniyor...`);
+            
+            try {
+                let textContent = '';
+                
+                if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+                    textContent = await extractPDFText(file);
+                } else {
+                    textContent = `[PowerPoint dosyası: ${file.name}]`;
+                }
+                
+                const doc = {
+                    id: Date.now().toString(),
+                    name: file.name,
+                    type: file.name.endsWith('.pdf') ? 'pdf' : 'ppt',
+                    size: formatFileSize(file.size),
+                    content: textContent,
+                    uploadedAt: new Date().toLocaleString('tr-TR')
+                };
+                
+                documents.push(doc);
+                updateDocumentsList();
+                updateStats();
+                
+                alert(`✅ "${file.name}" başarıyla yüklendi ve işlendi!`);
+                
+            } catch (error) {
+                console.error('Processing error:', error);
+                alert('Dosya işlenemedi: ' + error.message);
+            }
+        }
+
+        async function extractPDFText(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            
+            let fullText = '';
+            
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += `\n[Sayfa ${i}]\n${pageText}\n`;
+            }
+            
+            return fullText;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function showLoadingState(message) {
+            document.getElementById('documents-list').innerHTML = `
+                <div class="empty-state">
+                    <div class="loading-dots"><span></span><span></span><span></span></div>
+                    <div class="empty-title" style="margin-top: 20px;">${message}</div>
+                </div>
+            `;
+        }
+
+        function updateDocumentsList() {
+            const container = document.getElementById('documents-list');
+            const recentContainer = document.getElementById('recent-docs-list');
+            
+            if (documents.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📁</div>
+                        <div class="empty-title">Doküman kütüphanesi boş</div>
+                        <div class="empty-text">PDF veya PowerPoint dosyalarınızı yükleyin</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="doc-list">';
+            for (const doc of documents) {
+                html += `
+                    <div class="doc-item">
+                        <div class="doc-icon ${doc.type}">${doc.type === 'pdf' ? '📄' : '📊'}</div>
+                        <div class="doc-info">
+                            <div class="doc-name">${doc.name}</div>
+                            <div class="doc-meta">${doc.size} • ${doc.uploadedAt}</div>
+                        </div>
+                        <div class="doc-actions">
+                            <button class="doc-btn" onclick="previewDocument('${doc.id}')">👁️ Önizle</button>
+                            <button class="doc-btn" onclick="deleteDocument('${doc.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+            
+            // Update recent docs
+            if (recentContainer) {
+                const recent = documents.slice(-3).reverse();
+                if (recent.length > 0) {
+                    let recentHtml = '<div class="doc-list">';
+                    for (const doc of recent) {
+                        recentHtml += `
+                            <div class="doc-item" onclick="navigateTo('ask')">
+                                <div class="doc-icon ${doc.type}">${doc.type === 'pdf' ? '📄' : '📊'}</div>
+                                <div class="doc-info">
+                                    <div class="doc-name">${doc.name}</div>
+                                    <div class="doc-meta">${doc.size}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    recentHtml += '</div>';
+                    recentContainer.innerHTML = recentHtml;
+                }
+            }
+            
+            document.getElementById('total-docs').textContent = documents.length;
+            document.getElementById('doc-count').textContent = documents.length;
+        }
+
+        function deleteDocument(id) {
+            if (confirm('Bu dokümanı silmek istediğinizden emin misiniz?')) {
+                documents = documents.filter(d => d.id !== id);
+                updateDocumentsList();
+                updateStats();
+            }
+        }
+
+        function previewDocument(id) {
+            const doc = documents.find(d => d.id === id);
+            if (doc) {
+                alert(`📄 ${doc.name}\n\n${doc.content.substring(0, 500)}...`);
+            }
+        }
+
+        // ============ AI QUESTION ANSWERING ============
+        document.getElementById('chat-input')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') askQuestion();
+        });
+
+        async function askQuestion() {
+            const input = document.getElementById('chat-input');
+            const question = input.value.trim();
+            if (!question) return;
+            
+            if (documents.length === 0) {
+                alert('Lütfen önce doküman yükleyin!');
+                return;
+            }
+            
+            // Add user message
+            addChatMessage('user', question);
+            input.value = '';
+            
+            // Show loading
+            const loadingId = addChatMessage('assistant', `
+                <div class="loading-dots"><span></span><span></span><span></span></div>
+                <span style="margin-left: 10px;">Dokümanlarınızda aranıyor...</span>
+            `);
+            
+            try {
+                // Prepare document context
+                const context = documents.map(d => `
+                    === ${d.name} ===
+                    ${d.content.substring(0, 15000)}
+                `).join('\n\n');
+                
+                // Call Claude API via Supabase Edge Function
+                const response = await fetch('https://voynqdxzvfshozvqflzp.supabase.co/functions/v1/claude-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        documents: documents.map(d => ({ name: d.name, content: d.content.substring(0, 15000) }))
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove loading message
+                document.getElementById(loadingId)?.remove();
+                
+                if (data.content && data.content[0]) {
+                    addChatMessage('assistant', data.content[0].text);
+                    questionCount++;
+                    updateStats();
+                } else {
+                    addChatMessage('assistant', 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.');
+                }
+                
+            } catch (error) {
+                console.error('AI Error:', error);
+                document.getElementById(loadingId)?.remove();
+                addChatMessage('assistant', `Hata: ${error.message}`);
+            }
+        }
+
+        function addChatMessage(role, content) {
+            const container = document.getElementById('chat-messages');
+            const id = 'msg-' + Date.now();
+            
+            const messageHtml = `
+                <div class="chat-message ${role}" id="${id}">
+                    <div class="chat-avatar">${role === 'assistant' ? '🤖' : '👤'}</div>
+                    <div class="chat-bubble">${content}</div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', messageHtml);
+            container.scrollTop = container.scrollHeight;
+            
+            return id;
+        }
+
+        // ============ RESEARCH ============
+        document.getElementById('research-search')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performResearch(e.target.value);
+        });
+
+        async function performResearch(query) {
+            if (!query) return;
+
+            const resultsContainer = document.getElementById('research-results');
+            const sourceSelect = document.getElementById('source-select')?.value || 'all';
+            const yearFrom = document.getElementById('year-from')?.value || '';
+            const yearTo = document.getElementById('year-to')?.value || '';
+            const resultCount = parseInt(document.getElementById('result-count')?.value || '20');
+
+            resultsContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="loading-dots"><span></span><span></span><span></span></div>
+                    <div class="empty-title" style="margin-top: 20px;">Aranıyor...</div>
+                </div>
+            `;
+
+            let allResults = [];
+
+            // Semantic Scholar
+            if (sourceSelect === 'all' || sourceSelect === 'scholar') {
+                try {
+                    const res = await fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=${Math.min(resultCount, 100)}&fields=title,authors,year,venue,url`);
+                    const data = await res.json();
+                    if (data.data) {
+                        for (const a of data.data) {
+                            if (yearFrom && a.year && a.year < parseInt(yearFrom)) continue;
+                            if (yearTo && a.year && a.year > parseInt(yearTo)) continue;
+                            allResults.push({
+                                source: 'Semantic Scholar', sourceClass: 'semantic', icon: '🎓',
+                                title: a.title, authors: a.authors?.slice(0, 3).map(x => x.name).join(', ') || '',
+                                journal: a.venue || '', year: a.year || '', link: a.url || '#'
+                            });
+                        }
+                    }
+                } catch (e) { console.log('Semantic Scholar error:', e); }
+            }
+
+            // PubMed
+            if (sourceSelect === 'all' || sourceSelect === 'pubmed') {
+                try {
+                    const searchRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${resultCount}&retmode=json`);
+                    const searchData = await searchRes.json();
+                    const ids = searchData.esearchresult?.idlist || [];
+                    if (ids.length > 0) {
+                        const detailRes = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`);
+                        const detailData = await detailRes.json();
+                        for (const id of ids) {
+                            const a = detailData.result?.[id];
+                            if (a?.title) {
+                                const year = a.pubdate?.split(' ')[0] || '';
+                                if (yearFrom && year && parseInt(year) < parseInt(yearFrom)) continue;
+                                if (yearTo && year && parseInt(year) > parseInt(yearTo)) continue;
+                                allResults.push({
+                                    source: 'PubMed', sourceClass: 'pubmed', icon: '🔬',
+                                    title: a.title, authors: a.authors?.slice(0, 3).map(x => x.name).join(', ') || '',
+                                    journal: a.source || '', year: year, link: `https://pubmed.ncbi.nlm.nih.gov/${id}/`
+                                });
+                            }
+                        }
+                    }
+                } catch (e) { console.log('PubMed error:', e); }
+            }
+
+            // Europe PMC
+            if (sourceSelect === 'all' || sourceSelect === 'europepmc') {
+                try {
+                    const res = await fetch(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&resultType=lite&pageSize=${resultCount}&format=json`);
+                    const data = await res.json();
+                    if (data.resultList?.result) {
+                        for (const a of data.resultList.result) {
+                            if (yearFrom && a.pubYear && parseInt(a.pubYear) < parseInt(yearFrom)) continue;
+                            if (yearTo && a.pubYear && parseInt(a.pubYear) > parseInt(yearTo)) continue;
+                            allResults.push({
+                                source: 'Europe PMC', sourceClass: 'europepmc', icon: '🇪🇺',
+                                title: a.title || '', authors: a.authorString || '',
+                                journal: a.journalTitle || '', year: a.pubYear || '',
+                                link: a.pmid ? `https://europepmc.org/article/MED/${a.pmid}` : '#'
+                            });
+                        }
+                    }
+                } catch (e) { console.log('Europe PMC error:', e); }
+            }
+
+            // OpenAlex
+            if (sourceSelect === 'all' || sourceSelect === 'openalex') {
+                try {
+                    const res = await fetch(`https://api.openalex.org/works?search=${encodeURIComponent(query)}&per_page=${resultCount}`);
+                    const data = await res.json();
+                    if (data.results) {
+                        for (const a of data.results) {
+                            if (yearFrom && a.publication_year && a.publication_year < parseInt(yearFrom)) continue;
+                            if (yearTo && a.publication_year && a.publication_year > parseInt(yearTo)) continue;
+                            allResults.push({
+                                source: 'OpenAlex', sourceClass: 'openalex', icon: '📚',
+                                title: a.title || '', authors: a.authorships?.slice(0, 3).map(x => x.author?.display_name).join(', ') || '',
+                                journal: a.primary_location?.source?.display_name || '', year: a.publication_year || '',
+                                link: a.doi ? `https://doi.org/${a.doi.replace('https://doi.org/', '')}` : '#'
+                            });
+                        }
+                    }
+                } catch (e) { console.log('OpenAlex error:', e); }
+            }
+
+            if (allResults.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        <div class="empty-title">Sonuç bulunamadı</div>
+                    </div>
+                `;
+                return;
+            }
+
+            document.getElementById('results-count').textContent = `${allResults.length} sonuç`;
+            searchCount++;
+            updateStats();
+
+            let html = '<div class="results-grid">';
+            for (const r of allResults) {
+                html += `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="result-source ${r.sourceClass}">${r.icon} ${r.source}</span>
+                            <span style="color: var(--text-muted);">📅 ${r.year}</span>
+                        </div>
+                        <div class="result-title"><a href="${r.link}" target="_blank">${r.title}</a></div>
+                        <div class="result-meta">${r.authors} • ${r.journal}</div>
+                        <div><a href="${r.link}" target="_blank" class="result-btn">📄 Aç</a></div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            resultsContainer.innerHTML = html;
+        }
+
+        // ============ STATS ============
+        function updateStats() {
+            document.getElementById('stat-docs').textContent = documents.length;
+            document.getElementById('stat-questions').textContent = questionCount;
+            document.getElementById('stat-searches').textContent = searchCount;
+        }
+
+        // ============ INIT ============
+        window.onload = () => {
+            updateDocumentsList();
+            updateStats();
+            
+            // Load Google API
+            gapi.load('client:picker', () => {
+                console.log('Google API loaded');
+            });
+        };
+
+        console.log('🩺 MedAssist Pro initialized!');
+    </script>
+</body>
+</html>
